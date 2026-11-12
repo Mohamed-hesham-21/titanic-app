@@ -1,21 +1,81 @@
+import pandas as pd
 import plotly.express as px
-import streamlit as st
-from utils.config import ORDERS, COLORS
-
-def plot_family_size(df):
-    fig = px.histogram(df, x="family_size", nbins=11, labels={"family_size": "Family size (incl. the passenger)"},
-                    title="How big were the families on board?")
-    fig.update_layout(bargap=0.1, yaxis_title="Passengers")
-    # fig.show()
-    st.plotly_chart(fig)
+import plotly.graph_objects as go
+from utils.config import COLORS, LABELS, ORDERS
 
 
-    fig = px.histogram(df, x="age", nbins=30, marginal="box",
-                    labels={"age": "Age"}, title="Age of the passengers")
-    st.plotly_chart(fig)
+def create_family_size_chart(df: pd.DataFrame) -> go.Figure:
+    """Histogram of passenger family sizes colored by survival."""
+    fig = px.histogram(
+        df,
+        x="family_size",
+        color="survival",
+        nbins=11,
+        barmode="group",
+        color_discrete_map=COLORS,
+        category_orders=ORDERS,
+        labels=LABELS,
+        title="Family Size Distribution by Outcome",
+    )
+    fig.update_layout(
+        bargap=0.15,
+        yaxis_title="Number of Passengers",
+        legend_title_text="Outcome",
+    )
+    return fig
 
+
+def create_age_distribution_chart(df: pd.DataFrame) -> go.Figure:
+    """Histogram of passenger ages with a marginal box plot."""
+    fig = px.histogram(
+        df,
+        x="age",
+        color="survival",
+        nbins=30,
+        marginal="box",
+        color_discrete_map=COLORS,
+        category_orders=ORDERS,
+        labels=LABELS,
+        title="Age Distribution of Passengers",
+    )
+    fig.update_layout(
+        yaxis_title="Number of Passengers",
+        legend_title_text="Outcome",
+    )
+    return fig
+
+
+def create_survival_pie_chart(df: pd.DataFrame) -> go.Figure:
+    """Donut chart showing overall survival proportions."""
     outcome = df["survival"].value_counts().reset_index()
+    outcome.columns = ["survival", "count"]  # Safe across all pandas versions
 
-    fig = px.pie(outcome, names="survival", values="count", hole=0.5, color="survival",
-                color_discrete_map=COLORS, title="Died vs survived")
-    st.plotly_chart(fig)
+    fig = px.pie(
+        outcome,
+        names="survival",
+        values="count",
+        hole=0.5,
+        color="survival",
+        color_discrete_map=COLORS,
+        category_orders=ORDERS,
+        labels=LABELS,
+        title="Overall Survival Rate",
+    )
+    fig.update_traces(textposition="inside", textinfo="percent+label")
+    return fig
+
+
+def create_class_survival_chart(df: pd.DataFrame) -> go.Figure:
+    """Bar chart showing survival breakdown across passenger classes."""
+    fig = px.histogram(
+        df,
+        x="class",
+        color="survival",
+        barmode="group",
+        color_discrete_map=COLORS,
+        category_orders=ORDERS,
+        labels=LABELS,
+        title="Survival by Passenger Class",
+    )
+    fig.update_layout(yaxis_title="Number of Passengers")
+    return fig
